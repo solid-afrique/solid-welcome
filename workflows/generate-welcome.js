@@ -1,0 +1,286 @@
+#!/usr/bin/env node
+/**
+ * Génère un fichier de bienvenue SOLID SA autonome (livre animé, sans formulaire).
+ * Usage : node generate-welcome.js "<Prénom>" "<Nom>"
+ * Écrit le fichier dans bienvenue/<slug>.html et affiche son chemin sur stdout.
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const [, , prenomArg, nomArg] = process.argv;
+
+if (!prenomArg || !nomArg) {
+  console.error('Usage: node generate-welcome.js "<Prénom>" "<Nom>"');
+  process.exit(1);
+}
+
+const first = prenomArg.trim();
+const last = nomArg.trim();
+
+if (!first || !last) {
+  console.error('Le prénom et le nom ne peuvent pas être vides.');
+  process.exit(1);
+}
+
+function slugify(s) {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+const dateStr = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'Africa/Dakar',
+}).format(new Date());
+
+// Échappement pour insertion sûre dans du HTML
+function escHtml(s) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Échappement pour insertion sûre dans une chaîne JS (JSON.stringify suffit et est sûr)
+const firstJs = JSON.stringify(first);
+const lastJs = JSON.stringify(last);
+const firstHtml = escHtml(first);
+const lastHtml = escHtml(last);
+const dateHtml = escHtml(dateStr);
+
+const AFRICA_SVG = '<svg class="africa-mark" viewBox="0 0 200 220" fill="currentColor" aria-hidden="true"><path d="M96 4c10 0 15 8 24 10 8 2 18-2 24 6 5 7 1 16 6 22 6 7 17 6 20 15 3 8-6 14-4 23 2 9 12 13 11 22-1 9-11 11-13 19-2 9 6 16 2 24-4 8-15 6-19 13-4 7 2 16-4 22-5 5-13 1-18 6-6 6-2 15-9 19-7 4-14-3-21-1-8 2-11 12-19 11-8-1-9-12-16-15-7-3-15 3-21-2-6-5-2-14-7-19-5-5-14-2-17-9-3-7 4-13 3-20-1-8-10-11-10-19 0-8 9-11 10-19 1-7-6-13-3-20 3-7 12-7 16-13 4-6-1-15 4-20 5-5 14 0 20-4 6-4 4-14 11-16 6-2 12 5 19 4 7-1 10-10 18-9z"/></svg>';
+
+const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOLID SA — Bienvenue ${firstHtml} ${lastHtml}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0a2540;--navy-2:#0f3a63;--blue:#1565c0;--blue-light:#4a9be0;
+    --sky:#eaf3fc;--paper:#fdfbf6;--paper-2:#f4efe4;--ink:#182636;--muted:#5c6b7a;
+    --shadow-lg:0 40px 90px rgba(5,18,32,0.55);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    min-height:100vh;font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(74,155,224,0.16), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(21,101,192,0.20), transparent 50%),
+      linear-gradient(160deg,#071b30 0%, #0a2540 55%, #0f3a63 100%);
+    color:var(--ink);display:flex;align-items:center;justify-content:center;
+    padding:24px;overflow-x:hidden;
+  }
+  .app{width:100%;max-width:960px;position:relative;}
+  .africa-mark{position:absolute;opacity:0.08;filter:drop-shadow(0 0 30px rgba(74,155,224,0.4));pointer-events:none;}
+  #bookScreen{display:flex;flex-direction:column;align-items:center;animation:riseIn .7s ease both;}
+  @keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+  .book-stage{position:relative;width:100%;max-width:860px;perspective:2600px;}
+  .book-frame{position:relative;width:100%;aspect-ratio:16/10;border-radius:10px;display:flex;background:#0e1f33;box-shadow:var(--shadow-lg);overflow:hidden;}
+  .book-spine{position:absolute;left:50%;top:0;bottom:0;width:8px;transform:translateX(-4px);
+    background:linear-gradient(90deg, rgba(0,0,0,0.35), rgba(0,0,0,0.06) 30%, rgba(0,0,0,0.06) 70%, rgba(0,0,0,0.35));
+    z-index:20;pointer-events:none;}
+  .page-half{position:relative;width:50%;height:100%;padding:44px 40px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;background:linear-gradient(160deg,var(--paper), var(--paper-2));overflow:hidden;}
+  .page-left{border-radius:10px 0 0 10px;box-shadow:inset -14px 0 26px -18px rgba(10,20,32,0.55);}
+  .page-right{border-radius:0 10px 10px 0;box-shadow:inset 14px 0 26px -18px rgba(10,20,32,0.55);transform-origin:left center;backface-visibility:hidden;}
+  .page-right.flipping{animation:flipRight 1.1s cubic-bezier(.4,.7,.3,1) both;}
+  @keyframes flipRight{
+    0%{transform:rotateY(0deg);filter:brightness(1);}
+    48%,52%{transform:rotateY(-92deg);filter:brightness(0.72);}
+    100%{transform:rotateY(0deg);filter:brightness(1);}
+  }
+  .page-half .africa-mark{width:65%;height:65%;left:17%;top:17%;color:var(--blue);}
+  @media (prefers-reduced-motion:reduce){.page-right.flipping{animation:none;}}
+  @media (max-width:680px){
+    .book-frame{flex-direction:column;aspect-ratio:3/4;}
+    .book-spine{left:0;right:0;top:50%;bottom:auto;width:auto;height:8px;
+      background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.06) 30%, rgba(0,0,0,0.06) 70%, rgba(0,0,0,0.35));
+      transform:translateY(-4px);}
+    .page-half{width:100%;height:50%;padding:26px 24px;}
+    .page-left{border-radius:10px 10px 0 0;box-shadow:inset 0 -14px 26px -18px rgba(10,20,32,0.55);}
+    .page-right{border-radius:0 0 10px 10px;box-shadow:inset 0 14px 26px -18px rgba(10,20,32,0.55);}
+    .page-right.flipping{animation:fadeSwap .8s ease both;}
+    @keyframes fadeSwap{0%{opacity:1;}50%{opacity:0.15;}100%{opacity:1;}}
+  }
+  .eyebrow{font-family:'Inter',sans-serif;font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:var(--blue);margin-bottom:16px;}
+  .page-half h1.wordmark{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,5vw,46px);letter-spacing:0.02em;color:var(--navy);}
+  .page-half .tagline{margin-top:10px;font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:16px;color:var(--blue);}
+  .page-half .date-line{margin-top:22px;font-size:13px;color:var(--muted);letter-spacing:0.02em;}
+  .page-half .greeting{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(22px,3.4vw,28px);color:var(--navy);margin-bottom:6px;}
+  .page-half p{font-size:14.5px;line-height:1.8;color:#3d4c5c;text-align:left;margin-top:14px;}
+  .page-half .closing{font-family:'Fraunces',serif;font-style:italic;font-size:16px;color:var(--blue);margin-top:20px;}
+  .page-half .team{margin-top:10px;font-size:13px;color:var(--muted);}
+  .page-half .signature-role{font-size:12.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+  .page-half .signature-name{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(22px,3.4vw,28px);color:var(--blue);}
+  .page-half .final-note{font-family:'Fraunces',serif;font-style:italic;font-size:18px;color:var(--navy);line-height:1.6;}
+  .page-number{position:absolute;bottom:16px;font-size:11px;color:var(--muted);letter-spacing:0.05em;}
+  .page-left .page-number{left:22px;}
+  .page-right .page-number{right:22px;}
+  .book-controls{width:100%;max-width:860px;display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:26px;}
+  .nav-btn{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.06);
+    color:#eaf3fc;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s ease;flex-shrink:0;}
+  .nav-btn:hover:not(:disabled){background:rgba(255,255,255,0.16);transform:translateY(-2px);}
+  .nav-btn:disabled{opacity:0.25;cursor:not-allowed;}
+  .progress-wrap{flex:1;text-align:center;}
+  .dots{display:flex;justify-content:center;gap:8px;margin-bottom:10px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.25);transition:all .3s ease;}
+  .dot.active{background:var(--blue-light);width:20px;border-radius:4px;}
+  .progress-bar{width:100%;max-width:260px;margin:0 auto;height:2px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden;}
+  .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--blue-light));transition:width .5s ease;}
+  .restart-wrap{margin-top:30px;text-align:center;display:none;}
+  .restart-wrap.show{display:block;animation:riseIn .6s ease both;}
+  .restart-btn{padding:13px 32px;border-radius:30px;border:1.5px solid var(--blue-light);background:transparent;color:#eaf3fc;
+    font-weight:600;font-size:13.5px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all .3s ease;}
+  .restart-btn:hover{background:var(--blue-light);color:var(--navy);}
+  .festive-decorations{position:fixed;inset:0;pointer-events:none;z-index:1000;overflow:hidden;}
+  .balloon{position:absolute;font-size:2.6rem;animation:floatUp 6s ease-in-out infinite;opacity:.75;}
+  .balloon-1{top:8%;left:4%;animation-delay:0s;} .balloon-2{top:14%;right:6%;animation-delay:1s;}
+  .balloon-3{top:24%;left:12%;animation-delay:2s;} .balloon-4{top:18%;right:10%;animation-delay:3s;}
+  .balloon-5{top:32%;left:6%;animation-delay:4s;} .balloon-6{top:28%;right:4%;animation-delay:5s;}
+  @keyframes floatUp{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-18px) rotate(4deg);}}
+  .confetti{position:absolute;font-size:1.6rem;animation:confettiFall 4.5s linear infinite;opacity:0;}
+  .confetti-1{left:18%;animation-delay:0s;} .confetti-2{left:38%;animation-delay:1.1s;}
+  .confetti-3{left:62%;animation-delay:2.2s;} .confetti-4{left:82%;animation-delay:3.3s;}
+  @keyframes confettiFall{0%{top:-8%;opacity:1;transform:rotate(0deg);}100%{top:104%;opacity:0;transform:rotate(540deg);}}
+  .sparkle{position:absolute;font-size:1.2rem;animation:sparkleBlink 2.4s ease-in-out infinite;}
+  .sparkle-1{top:18%;left:28%;animation-delay:0s;} .sparkle-2{top:38%;left:68%;animation-delay:.5s;}
+  .sparkle-3{top:58%;left:22%;animation-delay:1s;} .sparkle-4{top:28%;left:78%;animation-delay:1.5s;}
+  .sparkle-5{top:68%;left:58%;animation-delay:2s;} .sparkle-6{top:48%;left:38%;animation-delay:2.5s;}
+  @keyframes sparkleBlink{0%,100%{opacity:.25;transform:scale(.8);}50%{opacity:1;transform:scale(1.15);}}
+</style>
+</head>
+<body>
+<div class="app">
+  <section id="bookScreen">
+    <div class="book-stage">
+      <div class="book-frame" id="bookFrame"><div class="book-spine"></div></div>
+    </div>
+    <div class="book-controls">
+      <button class="nav-btn" id="prevBtn" aria-label="Page précédente">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="progress-wrap">
+        <div class="dots" id="dots"></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+      <button class="nav-btn" id="nextBtn" aria-label="Page suivante">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="restart-wrap" id="restartWrap">
+      <button class="restart-btn" id="restartBtn">Revoir le message</button>
+    </div>
+  </section>
+  <div class="festive-decorations">
+    <div class="balloon balloon-1">🎈</div><div class="balloon balloon-2">🎈</div><div class="balloon balloon-3">🎈</div>
+    <div class="balloon balloon-4">🎈</div><div class="balloon balloon-5">🎈</div><div class="balloon balloon-6">🎈</div>
+    <div class="confetti confetti-1">🎊</div><div class="confetti confetti-2">🎊</div>
+    <div class="confetti confetti-3">🎊</div><div class="confetti confetti-4">🎊</div>
+    <div class="sparkle sparkle-1">✨</div><div class="sparkle sparkle-2">✨</div><div class="sparkle sparkle-3">✨</div>
+    <div class="sparkle sparkle-4">✨</div><div class="sparkle sparkle-5">✨</div><div class="sparkle sparkle-6">✨</div>
+  </div>
+</div>
+<script>
+(function(){
+  const PRENOM = ${firstJs};
+  const NOM = ${lastJs};
+  const DATE_STR = ${JSON.stringify(dateStr)};
+  const AFRICA_SVG = ${JSON.stringify(AFRICA_SVG)};
+
+  const bookFrame = document.getElementById('bookFrame');
+  const dotsWrap = document.getElementById('dots');
+  const progressFill = document.getElementById('progressFill');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const restartWrap = document.getElementById('restartWrap');
+  const restartBtn = document.getElementById('restartBtn');
+
+  let current = 0;
+  let timer = null;
+  const DURATIONS = [3800, 8200, 8200, 5200];
+
+  const spreads = [
+    { left:{html:\`\${AFRICA_SVG}<div class="eyebrow">Lettre de bienvenue</div><h1 class="wordmark">SOLID</h1><div class="tagline">Solution Informatique Durable</div>\`,num:1},
+      right:{html:\`<div class="eyebrow">Chez SOLID SA</div><h2 class="greeting">Bonjour \${PRENOM},</h2><div class="date-line">Dakar, le \${DATE_STR}</div>\`,num:2} },
+    { left:{html:\`<p>C'est avec un grand plaisir que la Direction Générale et tout le personnel de SOLID te souhaitent la bienvenue.</p><p>Nous sommes très heureux de te compter parmi l'équipe et la famille de SOLID SA.</p>\`,num:3},
+      right:{html:\`<p>Nous ferons tout ce qui est en notre pouvoir pour vous permettre d'évoluer dans un milieu dynamique et coopératif, où les relations interpersonnelles jouent un rôle important pour l'atteinte des objectifs stratégiques nécessaires à la croissance de l'entreprise.</p>\`,num:4} },
+    { left:{html:\`<div class="closing">Encore une fois, soyez le bienvenu et pleins succès à nos projets communs.</div><div class="team">Votre équipe de travail.</div>\`,num:5},
+      right:{html:\`<div class="signature-role">Président Directeur Général</div><div class="signature-name">Moustapha DIOP</div>\`,num:6} },
+    { left:{html:\`\${AFRICA_SVG}<div class="final-note">Bienvenue dans<br>l'aventure SOLID,</div>\`,num:7},
+      right:{html:\`<div class="final-note">\${PRENOM} \${NOM}.</div>\`,num:8} }
+  ];
+
+  function renderDots(){
+    dotsWrap.innerHTML = '';
+    spreads.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === current ? ' active' : '');
+      dotsWrap.appendChild(d);
+    });
+  }
+  function halfMarkup(side, data){
+    return \`<div class="page-half page-\${side}"><div class="page-content">\${data.html}</div><div class="page-number">\${data.num} / \${spreads.length * 2}</div></div>\`;
+  }
+  function renderSpread(index){
+    const s = spreads[index];
+    bookFrame.innerHTML = \`<div class="book-spine"></div>\${halfMarkup('left', s.left)}\${halfMarkup('right', s.right)}\`;
+    renderDots();
+    progressFill.style.width = (((index + 1) / spreads.length) * 100) + '%';
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === spreads.length - 1;
+    restartWrap.classList.toggle('show', index === spreads.length - 1);
+  }
+  function goTo(index, opts){
+    opts = opts || {};
+    if (index < 0 || index >= spreads.length) return;
+    current = index;
+    const rightPage = bookFrame.querySelector('.page-right');
+    if (rightPage && !opts.instant){
+      rightPage.classList.add('flipping');
+      setTimeout(() => renderSpread(current), 550);
+      setTimeout(() => { const np = bookFrame.querySelector('.page-right'); if (np) np.classList.remove('flipping'); }, 1150);
+    } else {
+      renderSpread(current);
+    }
+    if (!opts.manual) scheduleNext(); else clearTimeout(timer);
+  }
+  function scheduleNext(){
+    clearTimeout(timer);
+    if (current >= spreads.length - 1) return;
+    timer = setTimeout(() => goTo(current + 1), DURATIONS[current] || 6000);
+  }
+  function startBook(){ current = 0; clearTimeout(timer); renderSpread(0); scheduleNext(); }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1, { manual:true }));
+  nextBtn.addEventListener('click', () => goTo(current + 1, { manual:true }));
+  restartBtn.addEventListener('click', startBook);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') goTo(current + 1, { manual:true });
+    if (e.key === 'ArrowLeft') goTo(current - 1, { manual:true });
+  });
+
+  startBook();
+})();
+</script>
+</body>
+</html>
+`;
+
+const slug = `${slugify(first)}-${slugify(last)}`;
+const outDir = path.join(process.cwd(), 'bienvenue');
+fs.mkdirSync(outDir, { recursive: true });
+const outFile = path.join(outDir, `${slug}.html`);
+fs.writeFileSync(outFile, html, 'utf8');
+
+console.log(`FICHIER_GENERE=bienvenue/${slug}.html`);

@@ -1,0 +1,48 @@
+name: Générer message de bienvenue
+
+on:
+  workflow_dispatch:
+    inputs:
+      prenom:
+        description: "Prénom de la recrue"
+        required: true
+      nom:
+        description: "Nom de la recrue"
+        required: true
+
+# Nécessaire pour que le GITHUB_TOKEN par défaut puisse pousser le commit
+permissions:
+  contents: write
+
+jobs:
+  generer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Générer le fichier de bienvenue
+        id: generate
+        run: node scripts/generate-welcome.js "${{ github.event.inputs.prenom }}" "${{ github.event.inputs.nom }}" >> "$GITHUB_OUTPUT"
+
+      - name: Committer et pousser le fichier
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ steps.generate.outputs.FICHIER_GENERE }}"
+          git commit -m "Bienvenue: ${{ github.event.inputs.prenom }} ${{ github.event.inputs.nom }}"
+          git push
+
+      - name: Afficher le lien de partage
+        run: |
+          echo "### 🎉 Message de bienvenue publié" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Fichier :** \`${{ steps.generate.outputs.FICHIER_GENERE }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Une fois GitHub Pages redéployé (environ 1 minute), le lien sera :" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`https://${{ github.repository_owner }}.github.io/$(echo '${{ github.repository }}' | cut -d/ -f2)/${{ steps.generate.outputs.FICHIER_GENERE }}\`" >> "$GITHUB_STEP_SUMMARY"
