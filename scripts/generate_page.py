@@ -26,11 +26,8 @@ def main():
         print("⚠️  Token GitHub requis via --token ou GITHUB_TOKEN")
         return
 
-    with open('index.html', encoding='utf-8') as f:
+    with open('template.html', encoding='utf-8') as f:
         html = f.read()
-
-    # Retire l'écran de formulaire : la page publiée démarre directement le livre.
-    html = re.sub(r'<section id="formScreen".*?</section>\s*', '', html, flags=re.DOTALL)
 
     preset = json.dumps(
         {"prenom": args.prenom, "nom": args.nom, "date": args.date},

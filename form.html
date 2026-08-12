@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOLID SA — Formulaire de bienvenue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0a2540;
+    --navy-2:#0f3a63;
+    --blue:#1565c0;
+    --blue-light:#4a9be0;
+    --sky:#eaf3fc;
+    --ink:#182636;
+    --muted:#5c6b7a;
+    --line:rgba(10,37,64,0.12);
+    --shadow-lg:0 40px 90px rgba(5,18,32,0.55);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  body{
+    min-height:100vh;
+    font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(74,155,224,0.16), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(21,101,192,0.20), transparent 50%),
+      linear-gradient(160deg,#071b30 0%, #0a2540 55%, #0f3a63 100%);
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    overflow-x:hidden;
+  }
+
+  .app{width:100%;max-width:960px;position:relative;}
+
+  .africa-mark{
+    position:absolute;
+    opacity:0.08;
+    filter:drop-shadow(0 0 30px rgba(74,155,224,0.4));
+    pointer-events:none;
+  }
+
+  .card{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    background:linear-gradient(180deg,#ffffff, var(--sky));
+    border-radius:22px;
+    padding:52px 44px 44px;
+    box-shadow:var(--shadow-lg);
+    overflow:hidden;
+    text-align:center;
+  }
+
+  .card .africa-mark{width:340px;height:340px;right:-90px;top:-70px;color:var(--blue);}
+
+  .brandmark{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--blue);
+    margin-bottom:22px;
+  }
+  .brandmark::before,.brandmark::after{
+    content:'';
+    width:26px;height:1px;
+    background:var(--blue-light);
+  }
+
+  h1.card-title{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(28px,4vw,36px);
+    line-height:1.15;
+    color:var(--navy);
+    margin-bottom:14px;
+  }
+
+  .card-sub{
+    color:var(--muted);
+    font-size:15px;
+    line-height:1.6;
+    max-width:360px;
+    margin:0 auto 34px;
+  }
+
+  form{position:relative;z-index:1;}
+
+  .field{
+    text-align:left;
+    margin-bottom:18px;
+  }
+
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--navy-2);
+    margin-bottom:8px;
+  }
+
+  .field input{
+    width:100%;
+    padding:14px 16px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    font-family:'Inter',sans-serif;
+    font-size:15.5px;
+    color:var(--ink);
+    background:#fff;
+    transition:border-color .25s ease, box-shadow .25s ease;
+  }
+
+  .field input:focus{
+    outline:none;
+    border-color:var(--blue-light);
+    box-shadow:0 0 0 4px rgba(74,155,224,0.18);
+  }
+
+  .submit-btn{
+    width:100%;
+    margin-top:14px;
+    padding:15px 20px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(120deg,var(--blue) 0%, var(--blue-light) 100%);
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:0.03em;
+    cursor:pointer;
+    box-shadow:0 14px 30px rgba(21,101,192,0.35);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .submit-btn:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(21,101,192,0.45);}
+  .submit-btn:active{transform:translateY(0);}
+
+  .hint-error{
+    display:none;
+    color:#c0392b;
+    font-size:12.5px;
+    margin-top:-8px;
+    margin-bottom:14px;
+    text-align:left;
+  }
+  .hint-error.show{display:block;}
+
+  .deploy-status{
+    display:none;
+    margin-top:16px;
+    padding:14px 16px;
+    border-radius:12px;
+    background:var(--sky);
+    border:1.5px solid var(--line);
+    font-size:13.5px;
+    color:var(--navy-2);
+    text-align:left;
+  }
+  .deploy-status.show{display:block;}
+  .deploy-status a{
+    color:var(--blue);
+    font-weight:600;
+    word-break:break-all;
+  }
+  .deploy-status.is-error{color:#c0392b;}
+
+  @media (max-width:480px){
+    body{padding:8px;}
+    .card{padding:28px 16px 24px;border-radius:14px;}
+    .brandmark{font-size:13px;gap:6px;}
+    .brandmark::before,.brandmark::after{width:18px;}
+    h1.card-title{font-size:clamp(22px,5vw,28px);}
+    .card-sub{font-size:13.5px;margin-bottom:24px;}
+    .field input{padding:12px 14px;font-size:14px;}
+    .submit-btn{padding:13px;font-size:14px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="card">
+    <svg class="africa-mark" viewBox="0 0 200 220" fill="currentColor" aria-hidden="true">
+      <path d="M96 4c10 0 15 8 24 10 8 2 18-2 24 6 5 7 1 16 6 22 6 7 17 6 20 15 3 8-6 14-4 23 2 9 12 13 11 22-1 9-11 11-13 19-2 9 6 16 2 24-4 8-15 6-19 13-4 7 2 16-4 22-5 5-13 1-18 6-6 6-2 15-9 19-7 4-14-3-21-1-8 2-11 12-19 11-8-1-9-12-16-15-7-3-15 3-21-2-6-5-2-14-7-19-5-5-14-2-17-9-3-7 4-13 3-20-1-8-10-11-10-19 0-8 9-11 10-19 1-7-6-13-3-20 3-7 12-7 16-13 4-6-1-15 4-20 5-5 14 0 20-4 6-4 4-14 11-16 6-2 12 5 19 4 7-1 10-10 18-9z"/>
+    </svg>
+    <div class="brandmark">SOLID SA</div>
+    <h1 class="card-title">Souhaiter la bienvenue<br>à une recrue</h1>
+    <p class="card-sub">Renseignez son prénom, son nom et la date : un message de bienvenue personnalisé se déroulera ensuite, page après page.</p>
+
+    <form id="welcomeForm" novalidate>
+      <div class="field">
+        <label for="prenom">Prénom</label>
+        <input type="text" id="prenom" name="prenom" placeholder="Ex : Awa" autocomplete="given-name" required>
+      </div>
+      <div class="field">
+        <label for="nom">Nom</label>
+        <input type="text" id="nom" name="nom" placeholder="Ex : Ndiaye" autocomplete="family-name" required>
+      </div>
+      <div class="field">
+        <label for="dateWelcome">Date</label>
+        <input type="date" id="dateWelcome" name="dateWelcome" required>
+      </div>
+      <div class="hint-error" id="formError">Merci de renseigner le prénom, le nom et la date de la recrue.</div>
+      <button type="submit" class="submit-btn">Générer le mot de bienvenue</button>
+      <div class="deploy-status" id="deployStatus"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const form = document.getElementById('welcomeForm');
+  const formError = document.getElementById('formError');
+  const dateInput = document.getElementById('dateWelcome');
+  const deployStatus = document.getElementById('deployStatus');
+
+  if (dateInput && !dateInput.value) {
+    const today = new Date();
+    const iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    dateInput.value = iso;
+  }
+
+  function formatDate(isoValue){
+    if (!isoValue) {
+      return new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+    }
+    const parts = isoValue.split('-');
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+  }
+
+  function slugify(value){
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'x';
+  }
+
+  function setDeployStatus(html, isError){
+    deployStatus.innerHTML = html;
+    deployStatus.classList.add('show');
+    deployStatus.classList.toggle('is-error', !!isError);
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prenom = document.getElementById('prenom').value;
+      const nom = document.getElementById('nom').value;
+      const dateVal = dateInput ? dateInput.value : '';
+
+      if (!prenom.trim() || !nom.trim() || !dateVal) {
+        formError.classList.add('show');
+        return;
+      }
+      formError.classList.remove('show');
+
+      const dateStr = formatDate(dateVal);
+      
+      // Redirige vers la page générée
+      const filename = `bienvenue-${slugify(prenom)}-${slugify(nom)}.html`;
+      setDeployStatus('Redirection vers la page de bienvenue...');
+      
+      setTimeout(() => {
+        window.location.href = filename;
+      }, 1000);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
