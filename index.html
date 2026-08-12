@@ -915,38 +915,8 @@
   }
 
   async function deployWelcomePage(prenom, nom, dateStr){
-    setDeployStatus('Publication en cours sur GitHub…');
-
-    const dispatchResp = await fetch(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ref: 'main', inputs: { prenom, nom, date: dateStr } })
-      }
-    );
-
-    if (!dispatchResp.ok) {
-      throw new Error('Échec du déclenchement du workflow (HTTP ' + dispatchResp.status + ')');
-    }
-
-    const fileName = `bienvenue-${slugify(prenom)}-${slugify(nom)}.html`;
-    const publicUrl = `https://${GITHUB_OWNER}.github.io/${GITHUB_REPO}/${fileName}`;
-
-    // Le job prend quelques dizaines de secondes : on sonde jusqu'à ce que
-    // la page soit réellement en ligne avant d'afficher le lien.
-    for (let i = 0; i < 24; i++) {
-      await new Promise(r => setTimeout(r, 5000));
-      try {
-        const check = await fetch(publicUrl, { method: 'HEAD', cache: 'no-store' });
-        if (check.ok) return publicUrl;
-      } catch (e) { /* pas encore en ligne, on retente */ }
-    }
-    return publicUrl; // on renvoie quand même le lien attendu si le sondage a expiré
+    setDeployStatus('⚠️ La publication automatique via GitHub API nécessite un backend sécurisé. Le token ne peut pas être exposé dans le code frontend.');
+    return null;
   }
 
   if (form) {
