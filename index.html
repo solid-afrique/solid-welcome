@@ -685,6 +685,7 @@
 
 </div>
 
+<script src="config.js"></script>
 <script>
 (function(){
   const formScreen = document.getElementById('formScreen');
@@ -898,10 +899,7 @@
   //    "Actions: Read and write" sur CE dépôt uniquement (jamais un accès
   //    complet au code). Il reste visible dans le code source de la page.
   // ------------------------------------------------------------------
-  const GITHUB_OWNER = 'solid-afrique';
-  const GITHUB_REPO = 'solid-welcome';
-  const WORKFLOW_FILE = 'generate-welcome.yml';
-  const GITHUB_TOKEN = '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'; // ⚠️ régénère-le, ne réutilise jamais un token déjà exposé
+  // Les variables sont chargées depuis config.js
 
   const deployStatus = document.getElementById('deployStatus');
 
