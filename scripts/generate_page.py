@@ -2,6 +2,8 @@ import argparse
 import json
 import re
 import unicodedata
+import os
+import subprocess
 
 
 def slugify(value: str) -> str:
@@ -15,7 +17,14 @@ def main():
     parser.add_argument('--prenom', required=True)
     parser.add_argument('--nom', required=True)
     parser.add_argument('--date', required=True)
+    parser.add_argument('--token', help='GitHub Personal Access Token (ou utilise GITHUB_TOKEN env var)')
     args = parser.parse_args()
+
+    # Récupère le token depuis l'argument ou la variable d'environnement
+    github_token = args.token or os.getenv('GITHUB_TOKEN')
+    if not github_token:
+        print("⚠️  Token GitHub requis via --token ou GITHUB_TOKEN")
+        return
 
     with open('index.html', encoding='utf-8') as f:
         html = f.read()
@@ -34,7 +43,27 @@ def main():
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print(filename)
+    print(f"✅ Fichier généré : {filename}")
+
+    # Configure git avec le token
+    repo_url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'], text=True).strip()
+    
+    # Remplace l'URL avec le token pour l'authentification
+    if 'https://' in repo_url:
+        auth_url = repo_url.replace('https://', f'https://{github_token}@')
+        subprocess.run(['git', 'remote', 'set-url', 'origin', auth_url])
+
+    # Commit et push
+    try:
+        subprocess.run(['git', 'add', filename], check=True)
+        subprocess.run(['git', 'commit', '-m', f'Ajout page bienvenue {args.prenom} {args.nom}'], check=True)
+        subprocess.run(['git', 'push', 'origin', 'main'], check=True)
+        print(f"✅ Déployé sur GitHub : {filename}")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Erreur git : {e}")
+    finally:
+        # Restaure l'URL originale (sans token)
+        subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url])
 
 
 if __name__ == '__main__':
