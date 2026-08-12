@@ -9,6 +9,9 @@ on:
       nom:
         description: "Nom de la recrue"
         required: true
+      date:
+        description: "Date du message - jour mois année (JJ/MM/AAAA, ex: 09/08/2026)"
+        required: true
 
 # Nécessaire pour que le GITHUB_TOKEN par défaut puisse pousser le commit
 permissions:
@@ -28,7 +31,7 @@ jobs:
 
       - name: Générer le fichier de bienvenue
         id: generate
-        run: node scripts/generate-welcome.js "${{ github.event.inputs.prenom }}" "${{ github.event.inputs.nom }}" >> "$GITHUB_OUTPUT"
+        run: node scripts/generate-welcome.js "${{ github.event.inputs.prenom }}" "${{ github.event.inputs.nom }}" "${{ github.event.inputs.date }}" >> "$GITHUB_OUTPUT"
 
       - name: Committer et pousser le fichier
         run: |
