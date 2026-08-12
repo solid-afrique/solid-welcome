@@ -915,8 +915,27 @@
   }
 
   async function deployWelcomePage(prenom, nom, dateStr){
-    setDeployStatus('⚠️ La publication automatique via GitHub API nécessite un backend sécurisé. Le token ne peut pas être exposé dans le code frontend.');
-    return null;
+    setDeployStatus('Publication en cours sur GitHub…');
+    
+    try {
+      const response = await fetch('/api/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prenom, nom, date: dateStr })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur inconnue');
+      }
+      
+      setDeployStatus('Page publiée : <a href="' + data.url + '" target="_blank" rel="noopener">' + data.url + '</a>');
+      return data.url;
+    } catch (err) {
+      setDeployStatus('La publication a échoué : ' + err.message, true);
+      return null;
+    }
   }
 
   if (form) {
