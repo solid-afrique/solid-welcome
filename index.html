@@ -935,12 +935,9 @@
       const dateStr = formatDate(dateVal);
       startBook(prenom, nom, dateStr);
 
-      try {
-        const url = await deployWelcomePage(prenom, nom, dateStr);
-        setDeployStatus('Page publiée : <a href="' + url + '" target="_blank" rel="noopener">' + url + '</a>');
-      } catch (err) {
-        setDeployStatus('La publication a échoué : ' + err.message, true);
-      }
+      // La publication automatique est désactivée pour des raisons de sécurité
+      // (le token ne peut pas être exposé dans le code frontend)
+      await deployWelcomePage(prenom, nom, dateStr);
     });
   }
 
